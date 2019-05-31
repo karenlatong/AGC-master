@@ -4,7 +4,8 @@ There are two ways for computing intra_cluster distance:
 2) 2-norm distance: dist(predict_labels, feature)
 We recommend to use squared 2-norm distance, since squared 2-norm distance is usually more faster than 2-norm distance.
 
-Usage
+Usage:
+
 python test.py
 
 Please kindly cite our paper if you use this code in your own work:

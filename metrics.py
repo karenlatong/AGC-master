@@ -4,6 +4,8 @@ from sklearn.metrics import average_precision_score
 from sklearn import metrics
 from munkres import Munkres, print_matrix
 import numpy as np
+import os
+from constants import *
 
 class linkpred_metrics():
     def __init__(self, edges_pos, edges_neg):
@@ -97,7 +99,7 @@ class clustering_metrics():
 
         print('ACC=%f, f1_macro=%f, precision_macro=%f, recall_macro=%f, f1_micro=%f, precision_micro=%f, recall_micro=%f, NMI=%f, ADJ_RAND_SCORE=%f' % (acc, f1_macro, precision_macro, recall_macro, f1_micro, precision_micro, recall_micro, nmi, adjscore))
 
-        fh = open('recoder.txt', 'a')
+        fh = open(os.sep.join([OUTPUT_DIR,'recoder.txt']), 'a')
 
         fh.write('ACC=%f, f1_macro=%f, precision_macro=%f, recall_macro=%f, f1_micro=%f, precision_micro=%f, recall_micro=%f, NMI=%f, ADJ_RAND_SCORE=%f' % (acc, f1_macro, precision_macro, recall_macro, f1_micro, precision_micro, recall_micro, nmi, adjscore) )
         fh.write('\r\n')

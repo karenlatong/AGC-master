@@ -12,6 +12,37 @@ from sklearn.preprocessing import normalize
 import os
 from constants import *
 
+# Include standard modules
+import getopt, sys
+
+# Get full command-line arguments
+full_cmd_arguments = sys.argv
+
+argument_list = full_cmd_arguments[1:]
+
+print(argument_list)
+
+short_options = "d:c:"
+long_options = ["dataset=", "clusters=", "square_dist"]
+
+try:
+    arguments, values = getopt.getopt(argument_list, short_options, long_options)
+except getopt.error as err:
+    # Output error, and return with an error code
+    print (str(err))
+    sys.exit(2)
+
+# Evaluate given options
+for current_argument, current_value in arguments:
+    if current_argument in ("-d", "--dataset"):
+        DATASET_NAME = current_value
+    elif current_argument in ("-c", "--clusters"):
+        N_CLUSTERS = int(current_value)
+        TEST = False
+    elif current_argument in ("--square_dist"):    
+        SQAURE_DIST = True
+
+
 def normalize_adj(adj, type_='sym'):
     """Symmetrically normalize adjacency matrix."""
     if type_ == 'sym':
@@ -204,24 +235,23 @@ if __name__ == '__main__':
     # remove a dimension and obtain a 1-D vector
     gnd = gnd[0, :]
 
-    # get the number of correct clusters
-    k = len(np.unique(gnd))
+    if TEST:
+        # get the number of correct clusters
+        k = len(np.unique(gnd))
+    else:
+        k = N_CLUSTERS
+
     # pass matrix to coo format
     adj = sp.coo_matrix(adj)
     
     # initialize the list of intra cluster distances
-    intra_list = []
-    intra_list.append(10000)
-
-
-    acc_list = []
-    nmi_list = []
-    f1_list = []
-    stdacc_list = []
-    stdnmi_list = []
-    stdf1_list = []
-    max_iter = 60
-    rep = 10
+    intra_list = [float('inf')]
+    
+    acc_list, nmi_list, f1_list = [], [], []
+    stdacc_list, stdnmi_list, stdf1_list = [], [], []
+    
+    max_iter, rep =60, 10
+    
     t = time.time()
     adj_normalized = preprocess_adj(adj)
     adj_normalized = (sp.eye(adj_normalized.shape[0]) + adj_normalized) / 2
@@ -254,30 +284,36 @@ if __name__ == '__main__':
             predict_labels = kmeans.predict(u)
             
             # measure the intra distance of the clusters
-            intraD[i] = square_dist(predict_labels, feature)
-            #intraD[i] = dist(predict_labels, feature)
+            if SQAURE_DIST:
+                intraD[i] = square_dist(predict_labels, feature)
+            else:
+                intraD[i] = dist(predict_labels, feature)
             
-            # measure the accuracy, F1-score and nmi
-            cm = clustering_metrics(gnd, predict_labels)
-            ac[i], nm[i], f1[i] = cm.evaluationClusterModelFromLabel()
+            if TEST:
+                # measure the accuracy, F1-score and nmi
+                cm = clustering_metrics(gnd, predict_labels)
+                ac[i], nm[i], f1[i] = cm.evaluationClusterModelFromLabel()
         
         # save the scores 
         intra_list.append(np.mean(intraD))
-        acc_list.append(np.mean(ac))
-        stdacc_list.append(np.std(ac))
-        nmi_list.append(np.mean(nm))
-        stdnmi_list.append(np.std(nm))
-        f1_list.append(np.mean(f1))
-        stdf1_list.append(np.std(f1))
         
-        print(f'power: {power}',
-              f'intra_dist: {intra_list[-1]}',
+        if TEST:
+            acc_list.append(np.mean(ac))
+            stdacc_list.append(np.std(ac))
+            nmi_list.append(np.mean(nm))
+            stdnmi_list.append(np.std(nm))
+            f1_list.append(np.mean(f1))
+            stdf1_list.append(np.std(f1))
+            
+            print(f'power: {power}',
               f'acc_mean: {acc_list[-1]}',
               f'acc_std: {stdacc_list[-1]}',
               f'nmi_mean: {nmi_list[-1]}',
               f'nmi_std: {stdnmi_list[-1]}',
               f'f1_mean: {f1_list[-1]}',
               f'f1_std: {stdf1_list[-1]}')
+        
+        print(f'intra_dist: {intra_list[-1]}')
               
         # if the intra distance is increased wrt the precedent run stop. 
         if intra_list[tt] > intra_list[tt - 1] or tt > max_iter:
